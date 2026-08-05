@@ -18,13 +18,13 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "Happy Birthday, Beautiful.",
       description: "A little world of blossoms, wishes, and surprises—made just for you.",
       type: "website",
-      images: [{ url: `${origin}/og.png`, width: 1732, height: 907, alt: "Happy Birthday, Beautiful among cherry blossoms" }],
+      images: [{ url: `${origin}/blossom-hero.jpg`, width: 1800, height: 1200, alt: "Happy Birthday, Beautiful among cherry blossoms" }],
     },
     twitter: {
       card: "summary_large_image",
       title: "Happy Birthday, Beautiful.",
       description: "A little world of blossoms, wishes, and surprises—made just for you.",
-      images: [`${origin}/og.png`],
+      images: [`${origin}/blossom-hero.jpg`],
     },
   };
 }
