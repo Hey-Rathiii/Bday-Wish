@@ -28,12 +28,36 @@
 
 ---
 
+## 🎮 New surprise: Blossom Rush
+
+<div align="center">
+
+<img src="./public/blossom-rush-gameplay.png" alt="Blossom Rush birthday mini-game with falling blossoms and a moonlit catcher" width="720" />
+
+### Catch the blossoms. Dodge the clouds. Fill the garden with magic.
+
+</div>
+
+Blossom Rush is a 30-second birthday mini-game woven directly into the story. Guide the moonlit basket with a mouse, touchscreen, or keyboard and reach **30 magic points** before time runs out.
+
+| Treasure | Magic | Effect |
+|:---:|:---:|---|
+| ✿ | `+1` | A soft pink blossom |
+| ♥ | `+2` | A little extra love |
+| ✦ | `+5` | A rare golden blossom |
+| ☁ | `-1 heart` | A storm cloud to avoid |
+
+The game includes pause and replay controls, a saved local high score, responsive touch controls, keyboard support, and a secret victory wish.
+
+---
+
 ## 💌 The experience
 
 This is more than a birthday card. It is an interactive, scroll-driven story filled with soft light, cherry blossoms, warm wishes, and small surprises waiting to be discovered.
 
 | | Moment | What happens |
 |:---:|---|---|
+| 🎮 | **Blossom Rush** | A 30-second flower-catching game unlocks a secret victory wish |
 | 🌸 | **Blossom journey** | Floating petals and layered scenery move with the page |
 | 🕯️ | **Birthday magic** | An animated cake, candles, wishes, and confetti come alive |
 | 💌 | **Secret letter** | A personal birthday message opens through an interactive reveal |
@@ -92,6 +116,7 @@ npm start
 ```text
 Bday-Wish/
 ├── app/
+│   ├── BlossomRush.tsx          # Interactive birthday mini-game
 │   ├── BirthdayExperience.tsx   # Story, interactions, GSAP and Lenis
 │   ├── birthday.css             # Visual system and motion design
 │   ├── layout.tsx               # Metadata and social preview

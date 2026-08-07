@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { BlossomRush } from "./BlossomRush";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -161,7 +162,7 @@ export function BirthdayExperience() {
 
       <header className="site-header">
         <a className="brand" href="#top" aria-label="Back to the beginning"><span className="brand-mark">✦</span><span>Just for you</span></a>
-        <nav aria-label="Birthday story navigation"><a href="#memories">Little things</a><a href="#letter">A letter</a></nav>
+        <nav aria-label="Birthday story navigation"><a href="#memories">Little things</a><a href="#game">Play</a><a href="#letter">A letter</a></nav>
         <button className="theme-toggle" type="button" onClick={() => setTheme(theme === "light" ? "dark" : "light")}
           aria-label={`Switch to ${theme === "light" ? "night" : "day"} mode`}>
           <span>{theme === "light" ? "☾" : "☼"}</span><span className="theme-label">{theme === "light" ? "Moonlight" : "Sunlight"}</span>
@@ -221,8 +222,10 @@ export function BirthdayExperience() {
         </div>
       </section>
 
+      <BlossomRush />
+
       <section className="letter-section" id="letter">
-        <div className="letter-intro" data-reveal><p className="eyebrow">Something I meant to say / 04</p><h2>Some wishes deserve more than a caption.</h2><p>So this one is folded, sealed, and waiting for you.</p></div>
+        <div className="letter-intro" data-reveal><p className="eyebrow">Something I meant to say / 05</p><h2>Some wishes deserve more than a caption.</h2><p>So this one is folded, sealed, and waiting for you.</p></div>
         <button className="letter-card" type="button" onClick={() => setLetterOpen(true)} aria-haspopup="dialog">
           <span className="letter-stamp">✿</span><span className="letter-to">To: my favorite human</span><span className="letter-open">tap to open ↗</span><span className="letter-flap" aria-hidden="true" />
         </button>
@@ -231,7 +234,7 @@ export function BirthdayExperience() {
       <section className={`wish-section ${wishMade ? "wish-made" : ""}`}>
         <img className="cake-photo" src="/birthday-cake.jpg" alt="A delicate pink floral birthday cake" /><div className="wish-shade" />
         <div className="wish-copy" data-reveal>
-          <p className="eyebrow">One last thing / 05</p><h2>{wishMade ? "The wish is on its way." : "Close your eyes. Make it a good one."}</h2>
+          <p className="eyebrow">One last thing / 06</p><h2>{wishMade ? "The wish is on its way." : "Close your eyes. Make it a good one."}</h2>
           <div className="candle-row" aria-hidden="true">{Array.from({ length: 5 }, (_, index) => <span className="candle" key={index}><i /></span>)}</div>
           <button className="wish-button" type="button" onClick={makeWish} disabled={wishMade}>{wishMade ? "Wish made ✦" : "Blow out the candles"}</button>
         </div>
