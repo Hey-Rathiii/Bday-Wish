@@ -1,0 +1,9 @@
+.git/
+.next/
+.skill-staging/
+.vs/
+node_modules/
+prototypes/
+public/models/
+*.log
+*.tsbuildinfo
