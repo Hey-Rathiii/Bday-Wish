@@ -104,7 +104,6 @@ export function SwipeStory({ onCaptureChange }: SwipeStoryProps) {
     const initialIndex = Math.min(activeIndexRef.current, panels.length - 1);
     let currentIndex = initialIndex;
     let animating = false;
-    let queuedDirection: Direction | null = null;
     let captureActive = false;
     let activeTimeline: gsap.core.Timeline | null = null;
     let gestureObserver: Observer | null = null;
@@ -138,6 +137,7 @@ export function SwipeStory({ onCaptureChange }: SwipeStoryProps) {
       if (nextIndex === currentIndex) return;
 
       activeTimeline?.kill();
+      activeTimeline = null;
       animating = false;
       gsap.set(panels, { autoAlpha: 0, zIndex: 0 });
       gsap.set(outerWrappers, { yPercent: 100 });
@@ -166,12 +166,8 @@ export function SwipeStory({ onCaptureChange }: SwipeStoryProps) {
         defaults: { duration: 1.05, ease: "power1.inOut" },
         onComplete: () => {
           gsap.set(panels[previousIndex], { autoAlpha: 0, zIndex: 0 });
+          activeTimeline = null;
           animating = false;
-          if (queuedDirection !== null) {
-            const direction = queuedDirection;
-            queuedDirection = null;
-            requestAdjacentRef.current?.(direction);
-          }
         },
       })
         .to(backgrounds[previousIndex], {
@@ -213,7 +209,7 @@ export function SwipeStory({ onCaptureChange }: SwipeStoryProps) {
     goToSlideRef.current = goToSection;
 
     const setCaptured = (captured: boolean, scrollTarget?: number) => {
-      if (captureActive === captured && scrollTarget === undefined) return;
+      if (captureActive === captured) return;
       captureActive = captured;
       root.classList.toggle("is-observing", captured);
 
@@ -233,10 +229,7 @@ export function SwipeStory({ onCaptureChange }: SwipeStoryProps) {
     };
 
     const requestAdjacent = (direction: Direction) => {
-      if (animating) {
-        queuedDirection = direction;
-        return;
-      }
+      if (!captureActive || animating) return;
 
       const nextIndex = currentIndex + direction;
       if (nextIndex < 0 || nextIndex >= panels.length) {
@@ -250,7 +243,7 @@ export function SwipeStory({ onCaptureChange }: SwipeStoryProps) {
     requestAdjacentRef.current = requestAdjacent;
 
     gestureObserver = Observer.create({
-      target: window,
+      target: root,
       type: "wheel,touch,pointer",
       wheelSpeed: -1,
       dragMinimum: 10,
@@ -258,7 +251,7 @@ export function SwipeStory({ onCaptureChange }: SwipeStoryProps) {
       lockAxis: true,
       preventDefault: true,
       allowClicks: true,
-      ignore: ".swipe-story__controls",
+      ignore: ".swipe-story__controls, .swipe-story__controls *",
       onDown: () => requestAdjacent(-1),
       onUp: () => requestAdjacent(1),
     });
@@ -272,13 +265,13 @@ export function SwipeStory({ onCaptureChange }: SwipeStoryProps) {
       anticipatePin: 1,
       invalidateOnRefresh: true,
       refreshPriority: 20,
-      onEnter: (self) => {
+      onEnter: () => {
         prepareLanding(0);
-        setCaptured(true, self.start + 1);
+        setCaptured(true);
       },
-      onEnterBack: (self) => {
+      onEnterBack: () => {
         prepareLanding(panels.length - 1);
-        setCaptured(true, self.end - 1);
+        setCaptured(true);
       },
       onLeave: () => {
         if (captureActive) setCaptured(false);
@@ -288,20 +281,13 @@ export function SwipeStory({ onCaptureChange }: SwipeStoryProps) {
       },
     });
 
-    const refreshFrame = window.requestAnimationFrame(() => {
-      ScrollTrigger.sort();
-      ScrollTrigger.refresh(true);
-    });
-
     return () => {
       goToSlideRef.current = null;
       requestAdjacentRef.current = null;
-      window.cancelAnimationFrame(refreshFrame);
       if (captureActive) setCaptured(false);
       pinTrigger?.kill();
       gestureObserver?.kill();
       activeTimeline?.kill();
-      queuedDirection = null;
       context.revert();
       splitHeadings.forEach((split) => split.revert());
     };

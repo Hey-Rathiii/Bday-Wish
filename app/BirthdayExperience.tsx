@@ -68,10 +68,28 @@ export function BirthdayExperience() {
     const promiseStage = promiseVideo?.closest(".promise-stage") as HTMLElement | null;
     const videoProgress = { value: 0 };
     let lenis: Lenis | undefined;
-    let frame = 0;
     let videoSeekFrame = 0;
+    let videoSeekTimer = 0;
     let pendingVideoTime: number | null = null;
+    let lastVideoSeekAt = Number.NEGATIVE_INFINITY;
+    let lenisTick: ((time: number) => void) | null = null;
     let videoPreloadObserver: IntersectionObserver | null = null;
+    const videoSeekInterval = 1000 / 24;
+
+    const scheduleVideoSeek = () => {
+      if (videoSeekFrame || videoSeekTimer) return;
+
+      const remaining = Math.max(0, videoSeekInterval - (performance.now() - lastVideoSeekAt));
+      if (remaining > 0) {
+        videoSeekTimer = window.setTimeout(() => {
+          videoSeekTimer = 0;
+          videoSeekFrame = window.requestAnimationFrame(flushVideoSeek);
+        }, remaining);
+        return;
+      }
+
+      videoSeekFrame = window.requestAnimationFrame(flushVideoSeek);
+    };
 
     const flushVideoSeek = () => {
       videoSeekFrame = 0;
@@ -79,7 +97,10 @@ export function BirthdayExperience() {
 
       const nextTime = pendingVideoTime;
       pendingVideoTime = null;
-      if (Math.abs(promiseVideo.currentTime - nextTime) > 0.032) promiseVideo.currentTime = nextTime;
+      if (Math.abs(promiseVideo.currentTime - nextTime) > 0.032) {
+        lastVideoSeekAt = performance.now();
+        promiseVideo.currentTime = nextTime;
+      }
     };
 
     const seekPromiseVideo = (progress: number) => {
@@ -87,11 +108,11 @@ export function BirthdayExperience() {
 
       const boundedProgress = Math.min(1, Math.max(0, progress));
       pendingVideoTime = boundedProgress * Math.max(0, promiseVideo.duration - 0.04);
-      if (!promiseVideo.seeking && !videoSeekFrame) videoSeekFrame = window.requestAnimationFrame(flushVideoSeek);
+      scheduleVideoSeek();
     };
 
     const handleVideoSeeked = () => {
-      if (pendingVideoTime !== null && !videoSeekFrame) videoSeekFrame = window.requestAnimationFrame(flushVideoSeek);
+      if (pendingVideoTime !== null) scheduleVideoSeek();
     };
 
     const handleVideoMetadata = () => {
@@ -139,11 +160,9 @@ export function BirthdayExperience() {
         sliderStoppedLenisRef.current = true;
       }
       lenis.on("scroll", ScrollTrigger.update);
-      const raf = (time: number) => {
-        lenis?.raf(time);
-        frame = window.requestAnimationFrame(raf);
-      };
-      frame = window.requestAnimationFrame(raf);
+      lenisTick = (time: number) => lenis?.raf(time * 1000);
+      gsap.ticker.lagSmoothing(0);
+      gsap.ticker.add(lenisTick);
     }
 
     const context = gsap.context(() => {
@@ -182,6 +201,7 @@ export function BirthdayExperience() {
           pin: true,
           scrub: true,
           invalidateOnRefresh: true,
+          onToggle: (self) => promiseStage?.classList.toggle("is-video-active", self.isActive),
         },
       });
       gsap.set(".truth-line", { opacity: 0, y: 44 });
@@ -222,10 +242,12 @@ export function BirthdayExperience() {
       promiseVideo?.removeEventListener("seeked", handleVideoSeeked);
       promiseVideo?.removeEventListener("error", handleVideoError);
       promiseVideo?.pause();
-      promiseStage?.classList.remove("is-video-ready", "is-video-error");
+      promiseStage?.classList.remove("is-video-ready", "is-video-error", "is-video-active");
       videoPreloadObserver?.disconnect();
       window.cancelAnimationFrame(videoSeekFrame);
+      if (videoSeekTimer) window.clearTimeout(videoSeekTimer);
       context.revert();
+      if (lenisTick) gsap.ticker.remove(lenisTick);
       lenis?.destroy();
       if (lenisRef.current === lenis) lenisRef.current = null;
       sliderStoppedLenisRef.current = false;
@@ -233,7 +255,6 @@ export function BirthdayExperience() {
         window.cancelAnimationFrame(sliderSnapFrameRef.current);
         sliderSnapFrameRef.current = null;
       }
-      window.cancelAnimationFrame(frame);
     };
   }, []);
 
@@ -271,6 +292,21 @@ export function BirthdayExperience() {
     }
   }, []);
 
+  const scrollToStoryTarget = useCallback((target: string | number) => {
+    const lenis = lenisRef.current;
+    if (lenis && !lenis.isStopped) {
+      lenis.scrollTo(target);
+      return;
+    }
+
+    if (typeof target === "string") {
+      document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    window.scrollTo({ top: target, behavior: "smooth" });
+  }, []);
+
   const makeWish = () => {
     if (wishMade) return;
     setWishMade(true);
@@ -304,7 +340,7 @@ export function BirthdayExperience() {
           <h1 className="hero-title" aria-label="Happy Birthday Beautiful"><span>Happy</span><span>Birthday,</span><span className="script-line">beautiful.</span></h1>
           <div className="hero-note">
             <p>Today is yours. So I made you a little world to wander through.</p>
-            <button className="round-button" type="button" onClick={() => document.querySelector("#memories")?.scrollIntoView({ behavior: "smooth" })}>
+            <button className="round-button" type="button" onClick={() => scrollToStoryTarget("#memories")}>
               <span>Begin</span><span aria-hidden="true">↓</span>
             </button>
           </div>
@@ -372,7 +408,7 @@ export function BirthdayExperience() {
         <p className="finale-mark" aria-hidden="true">✦</p><p className="eyebrow" data-reveal>A wish for your next chapter</p>
         <h2 data-reveal>May this year bloom in every direction you dare to grow.</h2>
         <p data-reveal>Happy birthday, beautiful. You deserve a life that feels as lovely as you make everyone else’s.</p>
-        <button className="replay-button" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Replay the magic ↑</button>
+        <button className="replay-button" type="button" onClick={() => scrollToStoryTarget(0)}>Replay the magic ↑</button>
       </section>
 
       <footer><span>Made with care, petals & a little stardust.</span><span>Photos via Pexels</span></footer>

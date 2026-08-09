@@ -26,10 +26,22 @@ export default function PixelKitten({ active, motion, reducedMotion, theme }: Ca
     if (!kitten) return;
 
     let frame = 0;
+    let previousState = "";
     const render = () => {
-      kitten.dataset.direction = motion.current.direction < 0 ? "left" : "right";
-      kitten.dataset.moving = String(!reducedMotion && motion.current.moving);
-      kitten.dataset.celebrating = String(!reducedMotion && motion.current.celebrate);
+      const direction = motion.current.direction < 0 ? "left" : "right";
+      const moving = String(!reducedMotion && motion.current.moving);
+      const celebrating = String(!reducedMotion && motion.current.celebrate);
+      const nextState = `${direction}:${moving}:${celebrating}`;
+
+      // ScrollTrigger updates this ref every frame, but these three CSS states
+      // only change at a hop boundary. Avoid rewriting data attributes at 60fps.
+      if (nextState !== previousState) {
+        kitten.dataset.direction = direction;
+        kitten.dataset.moving = moving;
+        kitten.dataset.celebrating = celebrating;
+        previousState = nextState;
+      }
+
       if (active && !reducedMotion) frame = window.requestAnimationFrame(render);
     };
 

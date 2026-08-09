@@ -60,6 +60,7 @@ function SceneCamera() {
 
 function SceneLights({ scrollProgress, theme }: Pick<CakeSceneProps, "scrollProgress" | "theme">) {
   const candleLightRef = useRef<PointLight>(null);
+  const compact = useThree((state) => state.size.width < 640);
 
   useFrame((_, delta) => {
     if (!candleLightRef.current) return;
@@ -75,8 +76,10 @@ function SceneLights({ scrollProgress, theme }: Pick<CakeSceneProps, "scrollProg
         color={theme === "dark" ? "#ffd6bd" : "#fff7e6"}
         intensity={theme === "dark" ? 2.5 : 3.2}
         position={[5.5, 8, 7]}
-        shadow-mapSize-height={1024}
-        shadow-mapSize-width={1024}
+        // Mobile gets the same lighting/shadow treatment at a less expensive
+        // map size. ContactShadows keeps the soft grounding detail intact.
+        shadow-mapSize-height={compact ? 512 : 1024}
+        shadow-mapSize-width={compact ? 512 : 1024}
         shadow-camera-far={24}
         shadow-camera-left={-5}
         shadow-camera-right={5}
@@ -93,11 +96,11 @@ function FrostingLayer({ drips, radius, y }: { drips: number[]; radius: number; 
   return (
     <group>
       <mesh castShadow receiveShadow position={[0, y, 0]}>
-        <cylinderGeometry args={[radius, radius + 0.025, 0.34, 64]} />
+        <cylinderGeometry args={[radius, radius + 0.025, 0.34, 48]} />
         <meshPhysicalMaterial color="#f58eae" roughness={0.23} clearcoat={0.32} clearcoatRoughness={0.25} />
       </mesh>
-      <mesh castShadow position={[0, y - 0.16, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[radius - 0.105, 0.155, 12, 64]} />
+      <mesh position={[0, y - 0.16, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[radius - 0.105, 0.155, 12, 48]} />
         <meshPhysicalMaterial color="#f58eae" roughness={0.23} clearcoat={0.32} clearcoatRoughness={0.25} />
       </mesh>
       {drips.map((length, index) => {
@@ -105,7 +108,6 @@ function FrostingLayer({ drips, radius, y }: { drips: number[]; radius: number; 
         const frontFactor = Math.max(0.72, 1 - Math.max(0, Math.sin(angle)) * 0.18);
         return (
           <mesh
-            castShadow
             key={`${radius}-${index}`}
             position={[
               Math.cos(angle) * (radius - 0.015),
@@ -128,7 +130,7 @@ function CakeFace() {
     <group>
       {[-0.52, 0.52].map((x, index) => (
         <group key={x}>
-          <mesh castShadow position={[x, 0.43, 1.94]}>
+          <mesh position={[x, 0.43, 1.94]}>
             <sphereGeometry args={[0.23, 24, 20]} />
             <meshStandardMaterial color="#3b1f2a" roughness={0.23} />
           </mesh>
@@ -290,8 +292,8 @@ function Candle({
         <cylinderGeometry args={[0.09, 0.09, 1.04, 18]} />
         <meshStandardMaterial color={color} roughness={0.34} />
       </mesh>
-      <mesh castShadow>
-        <tubeGeometry args={[stripeCurve, 48, 0.014, 6, false]} />
+      <mesh>
+        <tubeGeometry args={[stripeCurve, 40, 0.014, 6, false]} />
         <meshStandardMaterial color="#fff8ec" roughness={0.4} />
       </mesh>
       <mesh position={[0, 1.085, 0]}>
@@ -334,30 +336,30 @@ function CakeModel({ reducedMotion, scrollProgress }: Pick<CakeSceneProps, "redu
   return (
     <group ref={cakeRef} position={[0, -0.48, 0]} rotation={[-0.03, -0.3, 0]} scale={0.62}>
       <mesh castShadow receiveShadow position={[0, -2.23, 0]}>
-        <cylinderGeometry args={[3.35, 3.18, 0.18, 64]} />
+        <cylinderGeometry args={[3.35, 3.18, 0.18, 48]} />
         <meshPhysicalMaterial color="#f3ead9" roughness={0.24} clearcoat={0.22} />
       </mesh>
       <mesh position={[0, -2.17, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[3.08, 0.12, 10, 64]} />
+        <torusGeometry args={[3.08, 0.12, 10, 48]} />
         <meshStandardMaterial color="#ddcaa9" roughness={0.38} />
       </mesh>
 
       <mesh castShadow receiveShadow position={[0, -1.32, 0]}>
-        <cylinderGeometry args={[2.62, 2.64, 1.72, 64]} />
+        <cylinderGeometry args={[2.62, 2.64, 1.72, 48]} />
         <meshStandardMaterial color="#efc58f" roughness={0.58} />
       </mesh>
       <mesh position={[0, -1.35, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[2.635, 0.035, 8, 64]} />
+        <torusGeometry args={[2.635, 0.035, 8, 48]} />
         <meshStandardMaterial color="#d8a86f" roughness={0.55} />
       </mesh>
       <FrostingLayer drips={BOTTOM_DRIPS} radius={2.68} y={-0.42} />
 
       <mesh castShadow receiveShadow position={[0, 0.5, 0]}>
-        <cylinderGeometry args={[2.0, 2.02, 1.52, 64]} />
+        <cylinderGeometry args={[2.0, 2.02, 1.52, 48]} />
         <meshStandardMaterial color="#f1ca98" roughness={0.56} />
       </mesh>
       <mesh position={[0, 0.48, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[2.01, 0.028, 8, 64]} />
+        <torusGeometry args={[2.01, 0.028, 8, 48]} />
         <meshStandardMaterial color="#d9aa73" roughness={0.58} />
       </mesh>
       <FrostingLayer drips={TOP_DRIPS} radius={2.08} y={1.2} />
@@ -379,13 +381,15 @@ function CakeModel({ reducedMotion, scrollProgress }: Pick<CakeSceneProps, "redu
 }
 
 function BirthdayScene({ reducedMotion, scrollProgress, theme }: Omit<CakeSceneProps, "active">) {
+  const compact = useThree((state) => state.size.width < 640);
+
   return (
     <>
       <SceneCamera />
       <SceneLights scrollProgress={scrollProgress} theme={theme} />
       <Sparkles
         color={theme === "dark" ? "#ffc8dc" : "#fff4bd"}
-        count={42}
+        count={compact ? 28 : 42}
         noise={[1.2, 1.5, 1.2]}
         opacity={0.72}
         scale={[8, 7, 4]}
@@ -399,7 +403,7 @@ function BirthdayScene({ reducedMotion, scrollProgress, theme }: Omit<CakeSceneP
         scale={8.5}
         blur={2.8}
         far={5.8}
-        resolution={512}
+        resolution={compact ? 256 : 512}
         frames={1}
         color={theme === "dark" ? "#09040b" : "#704458"}
       />
@@ -411,7 +415,9 @@ export default function CakeScene({ active, reducedMotion, scrollProgress, theme
   return (
     <Canvas
       camera={{ fov: 37, near: 0.1, far: 100, position: [0, 0.45, 11.2] }}
-      dpr={[1, 1.5]}
+      // The smaller DPR cap keeps retina/mobile scrolling fluid while retaining
+      // the soft, polished look of the cake materials.
+      dpr={[1, 1.35]}
       frameloop={active && !reducedMotion ? "always" : "demand"}
       gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
       onCreated={({ gl }) => {

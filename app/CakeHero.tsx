@@ -57,7 +57,12 @@ export function CakeHero({ theme }: Pick<CakeSceneProps, "theme">) {
 
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const updateMotionPreference = () => setReducedMotion(motionQuery.matches);
-    const syncActivity = () => setActive(inViewportRef.current && documentVisibleRef.current);
+    // Keep the renderer asleep once the cake has moved out of the reading area.
+    // The ref check avoids scheduling a React update for every observer callback.
+    const syncActivity = () => {
+      const nextActive = inViewportRef.current && documentVisibleRef.current;
+      setActive((currentActive) => (currentActive === nextActive ? currentActive : nextActive));
+    };
 
     setWebGLAvailable(supportsWebGL());
     updateMotionPreference();
@@ -76,7 +81,10 @@ export function CakeHero({ theme }: Pick<CakeSceneProps, "theme">) {
         inViewportRef.current = entry.isIntersecting;
         syncActivity();
       },
-      { rootMargin: "0px" },
+      // Shrink the active viewport a little at both edges. This lets the cake
+      // finish its exit before SwipeStory needs the main thread/GPU, while it
+      // remains live for every meaningful part of the hero.
+      { rootMargin: "-12% 0px -14% 0px", threshold: 0.01 },
     );
 
     const handleVisibilityChange = () => {

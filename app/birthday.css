@@ -38,6 +38,9 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; background: var(--paper); }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: clip; }
 body {
   margin: 0;
   overflow-x: hidden;
@@ -415,9 +418,10 @@ a { text-decoration: none; }
   opacity: 0;
   transform-origin: center;
   transition: filter .7s ease, opacity .55s ease;
-  will-change: transform;
+  will-change: auto;
 }
 .promise-stage.is-video-ready .promise-video { opacity: 1; }
+.promise-stage.is-video-active .promise-video { will-change: transform, opacity; }
 .promise-stage.is-video-error .promise-video { display: none; }
 .promise-video-shade {
   position: absolute;
@@ -505,13 +509,15 @@ a { text-decoration: none; }
 .swipe-story__panel { visibility: hidden; height: 100%; overflow: hidden; opacity: 0; }
 .swipe-story__panel:first-child { visibility: visible; opacity: 1; }
 .swipe-story__outer,
-.swipe-story__inner { overflow: hidden; will-change: transform; }
+.swipe-story__inner { overflow: hidden; }
 .swipe-story__background {
   overflow: hidden;
   background: var(--swipe-sky-deep);
   transform-origin: center;
-  will-change: transform;
 }
+.swipe-story.is-observing .swipe-story__outer,
+.swipe-story.is-observing .swipe-story__inner,
+.swipe-story.is-observing .swipe-story__background { will-change: transform; }
 .swipe-story__background::after {
   position: absolute;
   z-index: 2;
@@ -1360,6 +1366,15 @@ footer { display: flex; justify-content: space-between; padding: 24px 4vw 30px; 
   .cat-mail-card-4 { right: 4%; }
   .letter-section { grid-template-columns: 1fr; padding: 15vh 7vw; }
   .letter-card { justify-self: center; }
+}
+
+@media (max-width: 700px), (pointer: coarse) {
+  .site-header { backdrop-filter: blur(10px); }
+  .game-shell { backdrop-filter: blur(12px); }
+  .petal { box-shadow: none; }
+  .swipe-story__blossom,
+  .swipe-story__blossom:nth-child(4n) { filter: none; }
+  .swipe-story__petal-drift span { box-shadow: none; }
 }
 
 @media (max-width: 560px) {
