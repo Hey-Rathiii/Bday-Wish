@@ -1,141 +1,163 @@
 <div align="center">
 
-<img src="./public/og.png" alt="Bday Wish — a cherry-blossom birthday experience" width="100%" />
+![Bday Wish hero preview](./public/readme/hero.png)
 
-<br />
+# Bday Wish
 
-# 🌸 Bday Wish 🌸
+### An interactive birthday world, made with blossoms, motion and a lot of heart.
 
-### A little digital world made to help someone special feel truly celebrated.
-
-<p>
-  Cinematic blossoms · Smooth storytelling · Magical surprises · Made with love
-</p>
-
-<a href="https://just-to-make-you-feel-special.vercel.app">
-  <img src="https://img.shields.io/badge/✨_OPEN_THE_LIVE_EXPERIENCE-ff6b9d?style=for-the-badge&logo=vercel&logoColor=white" alt="Open the live website" />
-</a>
-
-<br /><br />
+[![Open the live experience](https://img.shields.io/badge/OPEN_THE_LIVE_EXPERIENCE-ff7aa8?style=for-the-badge&logo=vercel&logoColor=white)](https://just-to-make-you-feel-special.vercel.app/)
+[![GitHub stars](https://img.shields.io/github/stars/Hey-Rathiii/Bday-Wish?style=for-the-badge&logo=github&color=2b1525)](https://github.com/Hey-Rathiii/Bday-Wish/stargazers)
 
 ![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=flat-square&logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React_19-20232a?style=flat-square&logo=react&logoColor=61dafb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?style=flat-square&logo=typescript&logoColor=white)
-![GSAP](https://img.shields.io/badge/GSAP-0ae448?style=flat-square&logo=greensock&logoColor=000000)
+![GSAP](https://img.shields.io/badge/GSAP_3-0ae448?style=flat-square&logoColor=111111)
+![Three.js](https://img.shields.io/badge/Three.js-111111?style=flat-square&logo=threedotjs&logoColor=white)
+![Lenis](https://img.shields.io/badge/Lenis-smooth_scroll-f4b8cb?style=flat-square&logoColor=2b1525)
 ![Vercel](https://img.shields.io/badge/Deployed_on_Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
 
 </div>
 
 ---
 
-## 🎮 New surprise: Blossom Rush
+## A little world to wander through
 
-<div align="center">
+This is not a regular birthday card. It is a cinematic, responsive experience where a code-built cake reacts to the visitor, blossom scenes move with every gesture, a real video unfolds through scroll, a tiny kitten carries secret notes, and the final wish arrives with its own celebration.
 
-<img src="./public/blossom-rush-gameplay.png" alt="Blossom Rush birthday mini-game with falling blossoms and a moonlit catcher" width="720" />
+> Best experienced slowly, with a little curiosity. Every section hides a small surprise.
 
-### Catch the blossoms. Dodge the clouds. Fill the garden with magic.
+## Live preview
 
-</div>
+### A birthday cake built entirely in code
 
-Blossom Rush is a 30-second birthday mini-game woven directly into the story. Guide the moonlit basket with a mouse, touchscreen, or keyboard and reach **30 magic points** before time runs out.
+The hero is a real-time React Three Fiber scene with animated candles, frosting, sprinkles, lighting and scroll-reactive movement — not a static cake image.
 
-| Treasure | Magic | Effect |
-|:---:|:---:|---|
-| ✿ | `+1` | A soft pink blossom |
-| ♥ | `+2` | A little extra love |
-| ✦ | `+5` | A rare golden blossom |
-| ☁ | `-1 heart` | A storm cloud to avoid |
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="./public/readme/blossom-gallery.png" alt="Finite blossom swipe story" />
+      <br />
+      <sub><b>Finite blossom story</b> — three moments, one deliberate way through.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="./public/readme/five-truths.png" alt="Cherry blossom tree video with birthday truth" />
+      <br />
+      <sub><b>Five birthday truths</b> — a cinematic tree film scrubbed by scroll.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="./public/readme/blossom-rush.png" alt="Blossom Rush birthday mini-game" />
+      <br />
+      <sub><b>Blossom Rush</b> — 30 seconds to catch petals, hearts and stardust.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="./public/readme/kitten-journey.png" alt="Pixel kitten travelling between birthday mails" />
+      <br />
+      <sub><b>The tiny guide</b> — a pixel kitten travels between four secret mails.</sub>
+    </td>
+  </tr>
+</table>
 
-The game includes pause and replay controls, a saved local high score, responsive touch controls, keyboard support, and a secret victory wish.
+## What is inside
 
----
-
-## 💌 The experience
-
-This is more than a birthday card. It is an interactive, scroll-driven story filled with soft light, cherry blossoms, warm wishes, and small surprises waiting to be discovered.
-
-| | Moment | What happens |
-|:---:|---|---|
-| 🎮 | **Blossom Rush** | A 30-second flower-catching game unlocks a secret victory wish |
-| 🌸 | **Blossom journey** | Floating petals and layered scenery move with the page |
-| 🕯️ | **Birthday magic** | An animated cake, candles, wishes, and confetti come alive |
-| 💌 | **Secret letter** | A personal birthday message opens through an interactive reveal |
-| 🖼️ | **Memory gallery** | Photographs appear with soft, cinematic transitions |
-| 🌙 | **Midnight garden** | Switch between luminous light and dreamy dark themes |
-| ✨ | **Hidden surprises** | Little interactions reward curiosity throughout the experience |
-
-## 🎬 Motion and details
-
-- **Lenis smooth scrolling** for a calm, premium feel
-- **GSAP + ScrollTrigger** for pinned scenes and scroll choreography
-- Layered **parallax depth** across blossoms, light, and typography
-- Custom CSS particles, glow, confetti, candle, and reveal animations
-- Responsive composition for mobile, tablet, and desktop
-- Reduced-motion support for a more accessible experience
-
-## 🛠️ Made with
-
-| Technology | Role |
+| Moment | Experience |
 |---|---|
-| ▲ **Next.js 16** | Application framework and production rendering |
-| ⚛️ **React 19** | Interactive experience and component architecture |
-| 🔷 **TypeScript** | Type-safe, maintainable UI logic |
-| 🟢 **GSAP** | Timeline and scroll-linked animation |
-| 〰️ **Lenis** | Smooth scrolling and motion coordination |
-| 🎨 **Custom CSS** | Art direction, themes, responsive layout, and effects |
-| 🔺 **Vercel** | Production hosting, HTTPS, and global delivery |
+| 🎂 **The cake portal** | A procedural 3D two-tier cake with candles, frosting, face, sprinkles, lighting, pointer response and scroll motion. |
+| 🌸 **The blossom story** | A finite three-panel GSAP journey powered by Observer, ScrollTrigger and SplitText-style heading motion. |
+| 🌳 **Five little truths** | A full-screen cherry-blossom film whose frames and five messages are synchronized to scroll. |
+| ✨ **Blossom Rush** | A 30-second pointer, touch and keyboard mini-game with hearts, magic, pause/replay and a saved best score. |
+| 🐱 **Four tiny mails** | A pixel kitten follows GSAP Flip waypoints between four interactive birthday notes. |
+| ☀️ **Sunlight / moonlight** | A persisted light-and-dark theme changes the mood without losing the visual identity. |
+| 💌 **The sealed letter** | A private-feeling modal letter placed near the end of the journey. |
+| 🕯️ **The final wish** | Blow out the candles, release the confetti and reveal the closing birthday message. |
 
-## 🚀 Run it locally
+## The latest upgrade
 
-### 1. Clone the repository
+- Added the scroll-reactive 3D cake hero and a graceful non-WebGL fallback.
+- Added the finite GSAP blossom story immediately after the hero.
+- Replaced the old promise scene with a real cherry-blossom video scrubbed through five truths.
+- Added the pixel-kitten mail journey and four interactive envelopes.
+- Added smarter viewport-aware WebGL activity and video preparation.
+- Smoothed the hero-to-story handoff, fast panel gestures and off-screen animation work.
+- Added reduced-motion paths, keyboard controls and responsive compositions for phones through wide desktops.
+
+## Motion architecture
+
+```text
+Scroll / touch / pointer
+          │
+          ├── Lenis ─────────────── smooth page movement
+          ├── GSAP ScrollTrigger ─ pinned stories + video scrub
+          ├── GSAP Observer ─────── finite swipe navigation
+          ├── GSAP Flip ─────────── kitten waypoint travel
+          └── React Three Fiber ─── real-time birthday cake
+```
+
+| Layer | Tools |
+|---|---|
+| Framework | Next.js 16, React 19, TypeScript |
+| 3D | Three.js, React Three Fiber, Drei |
+| Motion | GSAP, ScrollTrigger, Observer, Flip, Lenis |
+| Styling | Handcrafted responsive CSS, CSS variables, dark/light themes |
+| Delivery | Vercel, optimized production build |
+
+## Project map
+
+```text
+app/
+├── BirthdayExperience.tsx   # Page orchestration, Lenis, truths, letter and wish
+├── CakeHero.tsx             # Cake visibility, scroll progress and fallback
+├── CakeScene.tsx            # Procedural React Three Fiber cake
+├── SwipeStory.tsx           # Finite three-panel GSAP story
+├── BlossomRush.tsx          # Birthday mini-game
+├── CatMailJourney.tsx       # Flip waypoints and interactive notes
+├── CatTravellerScene.tsx    # Pixel kitten guide
+├── birthday.css             # Themes, responsive art direction and motion
+├── layout.tsx
+└── page.tsx
+
+public/
+├── birthday-tree-scroll-scrub.mp4
+├── pixel-kitten.png
+└── readme/                  # Live production screenshots
+```
+
+## Run it locally
 
 ```bash
 git clone https://github.com/Hey-Rathiii/Bday-Wish.git
 cd Bday-Wish
-```
-
-### 2. Install and start
-
-```bash
 npm install
 npm run dev
 ```
 
-Open **[http://localhost:3000](http://localhost:3000)** in your browser.
-
-### 3. Create a production build
+Open [http://localhost:3000](http://localhost:3000), then scroll slowly.
 
 ```bash
 npm run build
-npm start
+npm run lint
 ```
 
-## 🗂️ Project map
+## Built with care
 
-```text
-Bday-Wish/
-├── app/
-│   ├── BlossomRush.tsx          # Interactive birthday mini-game
-│   ├── BirthdayExperience.tsx   # Story, interactions, GSAP and Lenis
-│   ├── birthday.css             # Visual system and motion design
-│   ├── layout.tsx               # Metadata and social preview
-│   └── page.tsx                 # Main page
-├── public/                      # Blossoms, cake, favicon and preview art
-├── package.json
-└── README.md
-```
-
-## 🌐 Live website
-
-<div align="center">
-
-### [just-to-make-you-feel-special.vercel.app](https://just-to-make-you-feel-special.vercel.app)
-
-No installation needed—just open the link, turn up the sound of your imagination, and scroll slowly. 🌸
+- Responsive layouts for desktop, tablet and mobile.
+- Keyboard, touch and pointer support in interactive moments.
+- Reduced-motion alternatives for visitors who prefer less animation.
+- Decorative visuals are kept outside the accessibility tree where appropriate.
+- Heavy scenes pause or prepare based on viewport visibility to keep the journey smooth.
 
 ---
 
-### Made with care, blossoms, and a little bit of birthday magic. 💖
+<div align="center">
+
+### Ready to enter the little world?
+
+[**Open the birthday experience →**](https://just-to-make-you-feel-special.vercel.app/)
+
+If this project made you smile, leave it a ⭐ — it means a lot.
+
+<sub>Made with care, petals and a little stardust.</sub>
 
 </div>
