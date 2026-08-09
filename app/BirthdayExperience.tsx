@@ -5,7 +5,6 @@ import type { CSSProperties } from "react";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Lenis from "lenis";
 import { BlossomRush } from "./BlossomRush";
 import { CakeHero } from "./CakeHero";
 import { CatMailJourney } from "./CatMailJourney";
@@ -41,10 +40,6 @@ const truths = [
 export function BirthdayExperience() {
   const pageRef = useRef<HTMLElement>(null);
   const promiseVideoRef = useRef<HTMLVideoElement>(null);
-  const lenisRef = useRef<Lenis | null>(null);
-  const sliderCapturedRef = useRef(false);
-  const sliderStoppedLenisRef = useRef(false);
-  const sliderSnapFrameRef = useRef<number | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [letterOpen, setLetterOpen] = useState(false);
   const [wishMade, setWishMade] = useState(false);
@@ -67,12 +62,10 @@ export function BirthdayExperience() {
     const promiseVideo = promiseVideoRef.current;
     const promiseStage = promiseVideo?.closest(".promise-stage") as HTMLElement | null;
     const videoProgress = { value: 0 };
-    let lenis: Lenis | undefined;
     let videoSeekFrame = 0;
     let videoSeekTimer = 0;
     let pendingVideoTime: number | null = null;
     let lastVideoSeekAt = Number.NEGATIVE_INFINITY;
-    let lenisTick: ((time: number) => void) | null = null;
     let videoPreloadObserver: IntersectionObserver | null = null;
     const videoSeekInterval = 1000 / 24;
 
@@ -144,25 +137,6 @@ export function BirthdayExperience() {
       } else {
         promiseVideo.preload = "auto";
       }
-    }
-
-    if (!reduceMotion) {
-      lenis = new Lenis({
-        duration: 1.15,
-        smoothWheel: true,
-        wheelMultiplier: 0.85,
-        touchMultiplier: 1.05,
-        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      });
-      lenisRef.current = lenis;
-      if (sliderCapturedRef.current && !lenis.isStopped) {
-        lenis.stop();
-        sliderStoppedLenisRef.current = true;
-      }
-      lenis.on("scroll", ScrollTrigger.update);
-      lenisTick = (time: number) => lenis?.raf(time * 1000);
-      gsap.ticker.lagSmoothing(0);
-      gsap.ticker.add(lenisTick);
     }
 
     const context = gsap.context(() => {
@@ -247,64 +221,18 @@ export function BirthdayExperience() {
       window.cancelAnimationFrame(videoSeekFrame);
       if (videoSeekTimer) window.clearTimeout(videoSeekTimer);
       context.revert();
-      if (lenisTick) gsap.ticker.remove(lenisTick);
-      lenis?.destroy();
-      if (lenisRef.current === lenis) lenisRef.current = null;
-      sliderStoppedLenisRef.current = false;
-      if (sliderSnapFrameRef.current !== null) {
-        window.cancelAnimationFrame(sliderSnapFrameRef.current);
-        sliderSnapFrameRef.current = null;
-      }
     };
   }, []);
 
-  const handleSwipeCapture = useCallback((captured: boolean, scrollTarget?: number) => {
-    sliderCapturedRef.current = captured;
-    pageRef.current?.classList.toggle("is-story-captured", captured);
-    const lenis = lenisRef.current;
-
-    if (sliderSnapFrameRef.current !== null) {
-      window.cancelAnimationFrame(sliderSnapFrameRef.current);
-      sliderSnapFrameRef.current = null;
-    }
-
-    if (captured && lenis && !lenis.isStopped) {
-      lenis.stop();
-      sliderStoppedLenisRef.current = true;
-    }
-
-    if (typeof scrollTarget === "number") {
-      sliderSnapFrameRef.current = window.requestAnimationFrame(() => {
-        sliderSnapFrameRef.current = null;
-        if (captured !== sliderCapturedRef.current) return;
-
-        if (lenis) {
-          lenis.scrollTo(scrollTarget, { immediate: true, force: true });
-        } else {
-          window.scrollTo({ top: scrollTarget, behavior: "auto" });
-        }
-      });
-    }
-
-    if (!captured && lenis && sliderStoppedLenisRef.current) {
-      sliderStoppedLenisRef.current = false;
-      lenis.start();
-    }
-  }, []);
-
   const scrollToStoryTarget = useCallback((target: string | number) => {
-    const lenis = lenisRef.current;
-    if (lenis && !lenis.isStopped) {
-      lenis.scrollTo(target);
-      return;
-    }
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
 
     if (typeof target === "string") {
-      document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
+      document.querySelector(target)?.scrollIntoView({ behavior, block: "start" });
       return;
     }
 
-    window.scrollTo({ top: target, behavior: "smooth" });
+    window.scrollTo({ top: target, behavior });
   }, []);
 
   const makeWish = () => {
@@ -349,7 +277,7 @@ export function BirthdayExperience() {
         <p className="hero-index" aria-hidden="true">BLOOM / 01</p>
       </section>
 
-      <SwipeStory onCaptureChange={handleSwipeCapture} />
+      <SwipeStory />
 
       <section className="intro-section" id="story">
         <p className="eyebrow" data-reveal>Before the cake. Before the candles.</p>

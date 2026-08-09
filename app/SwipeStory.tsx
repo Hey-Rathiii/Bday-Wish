@@ -1,13 +1,11 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { CSSProperties, KeyboardEvent } from "react";
+import { useLayoutEffect, useRef } from "react";
+import type { CSSProperties } from "react";
 import gsap from "gsap";
-import { Observer } from "gsap/Observer";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { SplitText } from "gsap/SplitText";
 
-const slides = [
+const moments = [
   {
     number: "01",
     eyebrow: "Soft strength",
@@ -31,418 +29,106 @@ const slides = [
   },
 ] as const;
 
-const cssBlossoms = Array.from({ length: 28 }, (_, index) => ({
-  id: index,
-  x: 8 + ((index * 37) % 86),
-  y: 7 + ((index * 53) % 53),
-  size: 18 + (index % 5) * 7,
-  rotate: (index * 47) % 360,
-  delay: -((index * 0.31) % 4),
-}));
+const blossoms = [
+  [9, 12, 18], [22, 20, 24], [53, 10, 15], [83, 17, 21],
+  [12, 38, 14], [88, 40, 19], [7, 63, 17], [92, 66, 14],
+  [17, 79, 19], [79, 77, 16], [55, 31, 12],
+].map(([x, y, size], index) => ({ id: index, x, y, size, rotate: (index * 47) % 360 }));
 
-const driftingPetals = Array.from({ length: 14 }, (_, index) => ({
-  id: index,
-  x: 4 + ((index * 41) % 92),
-  y: 9 + ((index * 29) % 76),
-  size: 7 + (index % 4) * 3,
-  delay: -((index * 0.73) % 8),
-  duration: 7 + (index % 5) * 1.3,
-}));
+const petals = [
+  [16, 28, 8], [88, 31, 10], [12, 53, 9], [86, 58, 7], [25, 88, 8],
+].map(([x, y, size], index) => ({ id: index, x, y, size, delay: -(index * .73) }));
 
-const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
-
-const subscribeToReducedMotion = (onStoreChange: () => void) => {
-  const mediaQuery = window.matchMedia(reducedMotionQuery);
-  mediaQuery.addEventListener("change", onStoreChange);
-  return () => mediaQuery.removeEventListener("change", onStoreChange);
-};
-
-const getReducedMotionSnapshot = () => window.matchMedia(reducedMotionQuery).matches;
-const getServerReducedMotionSnapshot = () => false;
-
-type SwipeStoryProps = {
-  onCaptureChange?: (captured: boolean, scrollTarget?: number) => void;
-};
-
-type Direction = -1 | 1;
-type GoToSlide = (index: number, direction: Direction) => void;
-
-export function SwipeStory({ onCaptureChange }: SwipeStoryProps) {
+export function SwipeStory() {
   const rootRef = useRef<HTMLElement>(null);
-  const goToSlideRef = useRef<GoToSlide | null>(null);
-  const requestAdjacentRef = useRef<((direction: Direction) => void) | null>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const activeIndexRef = useRef(activeIndex);
-  const reducedMotion = useSyncExternalStore(
-    subscribeToReducedMotion,
-    getReducedMotionSnapshot,
-    getServerReducedMotionSnapshot,
-  );
 
   useLayoutEffect(() => {
     const root = rootRef.current;
-    if (!root) return;
+    if (!root || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const panels = gsap.utils.toArray<HTMLElement>(".swipe-story__panel", root);
-    const outerWrappers = gsap.utils.toArray<HTMLElement>(".swipe-story__outer", root);
-    const innerWrappers = gsap.utils.toArray<HTMLElement>(".swipe-story__inner", root);
-    const backgrounds = gsap.utils.toArray<HTMLElement>(".swipe-story__background", root);
-    const headings = gsap.utils.toArray<HTMLElement>(".swipe-story__headline", root);
-    if (reducedMotion) {
-      root.classList.add("is-reduced-motion");
-
-      return () => {
-        root.classList.remove("is-reduced-motion");
-        goToSlideRef.current = null;
-        requestAdjacentRef.current = null;
-      };
-    }
-
-    gsap.registerPlugin(Observer, ScrollTrigger, SplitText);
-
-    const splitHeadings: SplitText[] = [];
-    const initialIndex = Math.min(activeIndexRef.current, panels.length - 1);
-    let currentIndex = initialIndex;
-    let animating = false;
-    let captureActive = false;
-    let activeTimeline: gsap.core.Timeline | null = null;
-    let gestureObserver: Observer | null = null;
-    let pinTrigger: ScrollTrigger | null = null;
-
+    gsap.registerPlugin(ScrollTrigger);
     const context = gsap.context(() => {
-      headings.forEach((heading) => {
-        splitHeadings.push(SplitText.create(heading, {
-          type: "chars,words,lines",
-          linesClass: "swipe-story__line",
-          aria: "auto",
-        }));
-      });
-
-      gsap.set(panels, { autoAlpha: 0, zIndex: 0 });
-      gsap.set(outerWrappers, { yPercent: 100 });
-      gsap.set(innerWrappers, { yPercent: -100 });
-      gsap.set(backgrounds, { yPercent: 0, scale: 1.06 });
-      gsap.set(panels[initialIndex], { autoAlpha: 1, zIndex: 1 });
-      gsap.set([outerWrappers[initialIndex], innerWrappers[initialIndex]], { yPercent: 0 });
-      gsap.set(splitHeadings[initialIndex]?.chars ?? [], { autoAlpha: 1, yPercent: 0 });
-    }, root);
-
-    const setCurrentIndex = (nextIndex: number) => {
-      currentIndex = nextIndex;
-      activeIndexRef.current = nextIndex;
-      setActiveIndex(nextIndex);
-    };
-
-    const prepareLanding = (nextIndex: number) => {
-      if (nextIndex === currentIndex) return;
-
-      activeTimeline?.kill();
-      activeTimeline = null;
-      animating = false;
-      gsap.set(panels, { autoAlpha: 0, zIndex: 0 });
-      gsap.set(outerWrappers, { yPercent: 100 });
-      gsap.set(innerWrappers, { yPercent: -100 });
-      gsap.set(backgrounds, { yPercent: 0, scale: 1.06 });
-      gsap.set(panels[nextIndex], { autoAlpha: 1, zIndex: 1 });
-      gsap.set([outerWrappers[nextIndex], innerWrappers[nextIndex]], { yPercent: 0 });
-      gsap.set(splitHeadings[nextIndex]?.chars ?? [], { autoAlpha: 1, yPercent: 0 });
-      setCurrentIndex(nextIndex);
-    };
-
-    const goToSection: GoToSlide = (nextIndex, direction) => {
-      if (animating || nextIndex === currentIndex || nextIndex < 0 || nextIndex >= panels.length) return;
-
-      animating = true;
-      activeTimeline?.kill();
-
-      const previousIndex = currentIndex;
-      const directionFactor = direction === -1 ? -1 : 1;
-      const nextChars = splitHeadings[nextIndex]?.chars ?? [];
-
-      gsap.set(panels[previousIndex], { zIndex: 1 });
-      gsap.set(panels[nextIndex], { autoAlpha: 1, zIndex: 2 });
-
-      activeTimeline = gsap.timeline({
-        defaults: { duration: 1.05, ease: "power1.inOut" },
-        onComplete: () => {
-          gsap.set(panels[previousIndex], { autoAlpha: 0, zIndex: 0 });
-          activeTimeline = null;
-          animating = false;
-        },
-      })
-        .to(backgrounds[previousIndex], {
-          yPercent: -14 * directionFactor,
-          scale: 1.13,
-        }, 0)
-        .fromTo(
-          [outerWrappers[nextIndex], innerWrappers[nextIndex]],
-          {
-            yPercent: (wrapperIndex: number) => wrapperIndex
-              ? -100 * directionFactor
-              : 100 * directionFactor,
-          },
-          { yPercent: 0 },
-          0,
-        )
-        .fromTo(
-          backgrounds[nextIndex],
-          { yPercent: 15 * directionFactor, scale: 1.16 },
-          { yPercent: 0, scale: 1.06 },
-          0,
-        )
-        .fromTo(
-          nextChars,
-          { autoAlpha: 0, yPercent: 150 * directionFactor },
+      gsap.utils.toArray<HTMLElement>(".swipe-story__card").forEach((card, index) => {
+        gsap.fromTo(card,
+          { autoAlpha: 0, y: 42, rotate: index === 1 ? 0 : index === 0 ? -1.5 : 1.5 },
           {
             autoAlpha: 1,
-            yPercent: 0,
-            duration: 0.9,
-            ease: "power2.out",
-            stagger: { each: 0.016, from: "random" },
+            y: 0,
+            rotate: 0,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: card,
+              start: "top 88%",
+              once: true,
+            },
           },
-          0.16,
         );
+      });
+    }, root);
 
-      setCurrentIndex(nextIndex);
-    };
-
-    goToSlideRef.current = goToSection;
-
-    const setCaptured = (captured: boolean, scrollTarget?: number) => {
-      if (captureActive === captured) return;
-      captureActive = captured;
-      root.classList.toggle("is-observing", captured);
-
-      if (captured) {
-        onCaptureChange?.(true, scrollTarget);
-        gestureObserver?.enable();
-      } else {
-        gestureObserver?.disable();
-        onCaptureChange?.(false, scrollTarget);
-      }
-    };
-
-    const releaseToPage = (direction: Direction) => {
-      if (!pinTrigger) return;
-      const destination = direction === 1 ? pinTrigger.end + 2 : pinTrigger.start - 2;
-      setCaptured(false, destination);
-    };
-
-    const requestAdjacent = (direction: Direction) => {
-      if (!captureActive || animating) return;
-
-      const nextIndex = currentIndex + direction;
-      if (nextIndex < 0 || nextIndex >= panels.length) {
-        releaseToPage(direction);
-        return;
-      }
-
-      goToSection(nextIndex, direction);
-    };
-
-    requestAdjacentRef.current = requestAdjacent;
-
-    gestureObserver = Observer.create({
-      target: root,
-      type: "wheel,touch,pointer",
-      wheelSpeed: -1,
-      dragMinimum: 10,
-      tolerance: 24,
-      lockAxis: true,
-      preventDefault: true,
-      allowClicks: true,
-      ignore: ".swipe-story__controls, .swipe-story__controls *",
-      onDown: () => requestAdjacent(-1),
-      onUp: () => requestAdjacent(1),
-    });
-    gestureObserver.disable();
-
-    pinTrigger = ScrollTrigger.create({
-      trigger: root,
-      start: "top top",
-      end: "+=200",
-      pin: true,
-      anticipatePin: 1,
-      invalidateOnRefresh: true,
-      refreshPriority: 20,
-      onEnter: () => {
-        prepareLanding(0);
-        setCaptured(true);
-      },
-      onEnterBack: () => {
-        prepareLanding(panels.length - 1);
-        setCaptured(true);
-      },
-      onLeave: () => {
-        if (captureActive) setCaptured(false);
-      },
-      onLeaveBack: () => {
-        if (captureActive) setCaptured(false);
-      },
-    });
-
-    return () => {
-      goToSlideRef.current = null;
-      requestAdjacentRef.current = null;
-      if (captureActive) setCaptured(false);
-      pinTrigger?.kill();
-      gestureObserver?.kill();
-      activeTimeline?.kill();
-      context.revert();
-      splitHeadings.forEach((split) => split.revert());
-    };
-  }, [onCaptureChange, reducedMotion]);
-
-  const goToSlide = (index: number) => {
-    const direction: Direction = index < activeIndex ? -1 : 1;
-    goToSlideRef.current?.(index, direction);
-  };
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-      if (!requestAdjacentRef.current) return;
-      event.preventDefault();
-      requestAdjacentRef.current(1);
-    } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-      if (!requestAdjacentRef.current) return;
-      event.preventDefault();
-      requestAdjacentRef.current(-1);
-    } else if (event.key === "Home") {
-      event.preventDefault();
-      goToSlide(0);
-    } else if (event.key === "End") {
-      event.preventDefault();
-      goToSlide(slides.length - 1);
-    }
-  };
+    return () => context.revert();
+  }, []);
 
   return (
-    <section
-      ref={rootRef}
-      className="swipe-story"
-      id="memories"
-      aria-label="A finite gallery of things that feel like you"
-      aria-roledescription="carousel"
-    >
-      <div className="swipe-story__viewport">
-        <div className="swipe-story__topline" aria-hidden="true">
-          <span>A tiny museum / 02</span>
-          <span>Three moments · one way through</span>
-        </div>
+    <section ref={rootRef} className="swipe-story" id="memories" aria-labelledby="little-things-title">
+      <div className="swipe-story__intro">
+        <p className="swipe-story__kicker">A tiny museum / 02</p>
+        <h2 id="little-things-title">Three little things I hope you always remember.</h2>
+        <p>There is no trick here—just three moments made to move with you, never hold you back.</p>
+      </div>
 
-        <div className="swipe-story__panels">
-          {slides.map((slide, index) => (
-            <article
-              className="swipe-story__panel"
-              key={slide.number}
-              aria-hidden={!reducedMotion && activeIndex !== index}
-              style={{ "--swipe-accent": slide.accent } as CSSProperties}
-            >
-              <div className="swipe-story__outer">
-                <div className="swipe-story__inner">
-                  <div className="swipe-story__background" data-scene={index + 1}>
-                    <div className="swipe-story__css-scene" aria-hidden="true">
-                      <span className="swipe-story__moon" />
-                      <div className="swipe-story__branch-system">
-                        <span className="swipe-story__branch swipe-story__branch--main" />
-                        <span className="swipe-story__branch swipe-story__branch--high" />
-                        <span className="swipe-story__branch swipe-story__branch--low" />
-                      </div>
-                      <div className="swipe-story__cherry-field">
-                        {cssBlossoms.map((blossom) => (
-                          <span
-                            className="swipe-story__blossom"
-                            key={blossom.id}
-                            style={{
-                              "--blossom-x": `${blossom.x}%`,
-                              "--blossom-y": `${blossom.y}%`,
-                              "--blossom-size": `${blossom.size}px`,
-                              "--blossom-rotate": `${blossom.rotate}deg`,
-                              "--blossom-delay": `${blossom.delay}s`,
-                            } as CSSProperties}
-                          />
-                        ))}
-                      </div>
-                      <div className="swipe-story__petal-drift">
-                        {driftingPetals.map((petal) => (
-                          <span
-                            key={petal.id}
-                            style={{
-                              "--petal-x": `${petal.x}%`,
-                              "--petal-y": `${petal.y}%`,
-                              "--petal-size": `${petal.size}px`,
-                              "--petal-delay": `${petal.delay}s`,
-                              "--petal-duration": `${petal.duration}s`,
-                            } as CSSProperties}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="swipe-story__shade" />
-                    <span className="swipe-story__ghost-number" aria-hidden="true">{slide.number}</span>
-                    <div className="swipe-story__content">
-                      <p className="swipe-story__eyebrow">{slide.eyebrow} / {slide.number}</p>
-                      <h2 className="swipe-story__headline">{slide.title}</h2>
-                      <p className="swipe-story__copy">{slide.copy}</p>
-                      <small>A little world drawn entirely in blossoms</small>
-                    </div>
-                  </div>
-                </div>
+      <div className="swipe-story__cards">
+        {moments.map((moment, index) => (
+          <article
+            className="swipe-story__card"
+            key={moment.number}
+            style={{ "--swipe-accent": moment.accent } as CSSProperties}
+          >
+            <div className="swipe-story__scene" data-scene={index + 1} aria-hidden="true">
+              <span className="swipe-story__moon" />
+              <div className="swipe-story__branch-system">
+                <span className="swipe-story__branch swipe-story__branch--main" />
+                <span className="swipe-story__branch swipe-story__branch--high" />
+                <span className="swipe-story__branch swipe-story__branch--low" />
               </div>
-            </article>
-          ))}
-        </div>
+              <div className="swipe-story__cherry-field">
+                {blossoms.map((blossom) => (
+                  <span
+                    className="swipe-story__blossom"
+                    key={blossom.id}
+                    style={{
+                      "--blossom-x": `${blossom.x}%`,
+                      "--blossom-y": `${blossom.y}%`,
+                      "--blossom-size": `${blossom.size}px`,
+                      "--blossom-rotate": `${blossom.rotate}deg`,
+                    } as CSSProperties}
+                  />
+                ))}
+              </div>
+              <div className="swipe-story__petal-drift">
+                {petals.map((petal) => (
+                  <span
+                    key={petal.id}
+                    style={{
+                      "--petal-x": `${petal.x}%`,
+                      "--petal-y": `${petal.y}%`,
+                      "--petal-size": `${petal.size}px`,
+                      "--petal-delay": `${petal.delay}s`,
+                    } as CSSProperties}
+                  />
+                ))}
+              </div>
+            </div>
 
-        <div className="swipe-story__side-cue" aria-hidden="true">
-          <span />
-          <p>Swipe through three little things</p>
-        </div>
-
-        <div className="swipe-story__controls">
-          <button
-            type="button"
-            className="swipe-story__arrow"
-            onClick={() => goToSlide(activeIndex - 1)}
-            onKeyDown={handleKeyDown}
-            aria-label="Show previous memory"
-            disabled={activeIndex === 0}
-          >
-            <span aria-hidden="true">↑</span>
-          </button>
-
-          <div className="swipe-story__dots" aria-label="Choose a memory">
-            {slides.map((slide, index) => (
-              <button
-                type="button"
-                key={slide.number}
-                className="swipe-story__dot"
-                aria-label={`Show memory ${index + 1}: ${slide.eyebrow}`}
-                aria-current={activeIndex === index ? "true" : undefined}
-                onClick={() => goToSlide(index)}
-                onKeyDown={handleKeyDown}
-              >
-                <span />
-              </button>
-            ))}
-          </div>
-
-          <p className="swipe-story__counter" aria-live="polite">
-            <span>{String(activeIndex + 1).padStart(2, "0")}</span>
-            <i />
-            <span>{String(slides.length).padStart(2, "0")}</span>
-          </p>
-
-          <button
-            type="button"
-            className="swipe-story__arrow"
-            onClick={() => goToSlide(activeIndex + 1)}
-            onKeyDown={handleKeyDown}
-            aria-label="Show next memory"
-            disabled={activeIndex === slides.length - 1}
-          >
-            <span aria-hidden="true">↓</span>
-          </button>
-        </div>
+            <span className="swipe-story__number" aria-hidden="true">{moment.number}</span>
+            <div className="swipe-story__content">
+              <p className="swipe-story__eyebrow">{moment.eyebrow}</p>
+              <h3>{moment.title}</h3>
+              <p>{moment.copy}</p>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   );
