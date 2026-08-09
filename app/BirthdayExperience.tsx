@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { BlossomRush } from "./BlossomRush";
+import { CakeHero } from "./CakeHero";
+import { CatMailJourney } from "./CatMailJourney";
+import { SwipeStory } from "./SwipeStory";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -34,14 +38,13 @@ const truths = [
   "Today, the universe celebrates you.",
 ];
 
-const gallery = [
-  { number: "01", image: "/blossom-detail.jpg", title: "Soft strength", copy: "Like blossoms after winter—you make grace look fearless.", credit: "Photo: Suki Lee / Pexels" },
-  { number: "02", image: "/birthday-cake.jpg", title: "Joy, generously", copy: "The kind you bring into a room before you even say hello.", credit: "Photo: Karina Kungla / Pexels" },
-  { number: "03", image: "/blossom-hero.jpg", title: "Everyday magic", copy: "A reminder that the loveliest things are often quietly becoming.", credit: "Photo: Amelia Cui / Pexels" },
-];
-
 export function BirthdayExperience() {
   const pageRef = useRef<HTMLElement>(null);
+  const promiseVideoRef = useRef<HTMLVideoElement>(null);
+  const lenisRef = useRef<Lenis | null>(null);
+  const sliderCapturedRef = useRef(false);
+  const sliderStoppedLenisRef = useRef(false);
+  const sliderSnapFrameRef = useRef<number | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [letterOpen, setLetterOpen] = useState(false);
   const [wishMade, setWishMade] = useState(false);
@@ -61,8 +64,66 @@ export function BirthdayExperience() {
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const promiseVideo = promiseVideoRef.current;
+    const promiseStage = promiseVideo?.closest(".promise-stage") as HTMLElement | null;
+    const videoProgress = { value: 0 };
     let lenis: Lenis | undefined;
     let frame = 0;
+    let videoSeekFrame = 0;
+    let pendingVideoTime: number | null = null;
+    let videoPreloadObserver: IntersectionObserver | null = null;
+
+    const flushVideoSeek = () => {
+      videoSeekFrame = 0;
+      if (!promiseVideo || pendingVideoTime === null || promiseVideo.seeking) return;
+
+      const nextTime = pendingVideoTime;
+      pendingVideoTime = null;
+      if (Math.abs(promiseVideo.currentTime - nextTime) > 0.032) promiseVideo.currentTime = nextTime;
+    };
+
+    const seekPromiseVideo = (progress: number) => {
+      if (!promiseVideo || !Number.isFinite(promiseVideo.duration) || promiseVideo.duration <= 0) return;
+
+      const boundedProgress = Math.min(1, Math.max(0, progress));
+      pendingVideoTime = boundedProgress * Math.max(0, promiseVideo.duration - 0.04);
+      if (!promiseVideo.seeking && !videoSeekFrame) videoSeekFrame = window.requestAnimationFrame(flushVideoSeek);
+    };
+
+    const handleVideoSeeked = () => {
+      if (pendingVideoTime !== null && !videoSeekFrame) videoSeekFrame = window.requestAnimationFrame(flushVideoSeek);
+    };
+
+    const handleVideoMetadata = () => {
+      promiseVideo?.pause();
+      seekPromiseVideo(reduceMotion ? 0.58 : videoProgress.value);
+    };
+
+    const handleVideoReady = () => promiseStage?.classList.add("is-video-ready");
+    const handleVideoError = () => promiseStage?.classList.add("is-video-error");
+
+    promiseVideo?.addEventListener("loadedmetadata", handleVideoMetadata);
+    promiseVideo?.addEventListener("loadeddata", handleVideoReady);
+    promiseVideo?.addEventListener("seeked", handleVideoSeeked);
+    promiseVideo?.addEventListener("error", handleVideoError);
+    if (promiseVideo && promiseVideo.readyState >= 1) handleVideoMetadata();
+    if (promiseVideo && promiseVideo.readyState >= 2) handleVideoReady();
+
+    if (!reduceMotion && promiseVideo) {
+      if (promiseStage && "IntersectionObserver" in window) {
+        videoPreloadObserver = new IntersectionObserver((entries) => {
+          if (!entries.some((entry) => entry.isIntersecting)) return;
+          promiseStage.classList.remove("is-video-ready");
+          promiseVideo.preload = "auto";
+          promiseVideo.load();
+          videoPreloadObserver?.disconnect();
+          videoPreloadObserver = null;
+        }, { rootMargin: "180% 0px" });
+        videoPreloadObserver.observe(promiseStage);
+      } else {
+        promiseVideo.preload = "auto";
+      }
+    }
 
     if (!reduceMotion) {
       lenis = new Lenis({
@@ -72,6 +133,11 @@ export function BirthdayExperience() {
         touchMultiplier: 1.05,
         easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       });
+      lenisRef.current = lenis;
+      if (sliderCapturedRef.current && !lenis.isStopped) {
+        lenis.stop();
+        sliderStoppedLenisRef.current = true;
+      }
       lenis.on("scroll", ScrollTrigger.update);
       const raf = (time: number) => {
         lenis?.raf(time);
@@ -91,10 +157,10 @@ export function BirthdayExperience() {
         .fromTo(".hero-kicker", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.8 })
         .fromTo(".hero-title span", { opacity: 0, yPercent: 105, rotate: 2 }, { opacity: 1, yPercent: 0, rotate: 0, duration: 1.15, stagger: 0.12 }, "-=0.42")
         .fromTo(".hero-note", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.7 }, "-=0.5")
-        .fromTo(".hero-portrait", { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: 1.4 }, 0.2);
+        .fromTo(".hero-cake-stage", { opacity: 0, scale: 1.06, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: 1.4 }, 0.2);
 
-      gsap.to(".hero-portrait img", {
-        yPercent: 14, scale: 1.08, ease: "none",
+      gsap.to(".cake-portal-ring", {
+        rotate: 18, scale: 1.08, ease: "none",
         scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true },
       });
       gsap.to(".hero-title", {
@@ -109,22 +175,37 @@ export function BirthdayExperience() {
       });
 
       const promiseTimeline = gsap.timeline({
-        scrollTrigger: { trigger: ".promise-stage", start: "top top", end: "+=2600", pin: true, scrub: 0.85 },
+        scrollTrigger: {
+          trigger: ".promise-stage",
+          start: "top top",
+          end: () => `+=${window.innerHeight * 4.6}`,
+          pin: true,
+          scrub: true,
+          invalidateOnRefresh: true,
+        },
       });
       gsap.set(".truth-line", { opacity: 0, y: 44 });
-      truths.forEach((_, index) => {
-        promiseTimeline
-          .to(`.truth-line:nth-child(${index + 1})`, { opacity: 1, y: 0, duration: 0.7 })
-          .to(`.truth-line:nth-child(${index + 1})`, { opacity: index === truths.length - 1 ? 1 : 0, y: -35, duration: 0.5 }, "+=0.45");
-      });
-      promiseTimeline.fromTo(".tree-crown", { scale: 0.55, rotate: -7 }, { scale: 1, rotate: 0, duration: 3.2, ease: "power2.out" }, 0);
+      const storyDuration = 7;
 
-      gsap.utils.toArray<HTMLElement>(".memory-card").forEach((card, index) => {
-        gsap.fromTo(card, { y: index % 2 === 0 ? 110 : 180, rotate: index % 2 === 0 ? -2.5 : 2.5 }, {
-          y: index % 2 === 0 ? -30 : -90, rotate: 0, ease: "none",
-          scrollTrigger: { trigger: ".memory-grid", start: "top bottom", end: "bottom top", scrub: 1.1 },
-        });
+      promiseTimeline
+        .to(videoProgress, {
+          value: 1,
+          duration: storyDuration,
+          ease: "none",
+          onUpdate: () => seekPromiseVideo(videoProgress.value),
+        }, 0)
+        .fromTo(".promise-video", { scale: 1.035 }, { scale: 1, duration: storyDuration, ease: "none" }, 0);
+
+      truths.forEach((_, index) => {
+        const revealAt = index * 1.4;
+        promiseTimeline
+          .to(`.truth-line:nth-child(${index + 1})`, { opacity: 1, y: 0, duration: 0.48, ease: "power2.out" }, revealAt);
+
+        if (index < truths.length - 1) {
+          promiseTimeline.to(`.truth-line:nth-child(${index + 1})`, { opacity: 0, y: -35, duration: 0.38, ease: "power2.in" }, revealAt + 1);
+        }
       });
+
       gsap.fromTo(".letter-card", { rotate: -5, y: 100 }, {
         rotate: 1.5, y: -15, ease: "none",
         scrollTrigger: { trigger: ".letter-section", start: "top bottom", end: "bottom top", scrub: 1 },
@@ -136,10 +217,58 @@ export function BirthdayExperience() {
     }, pageRef);
 
     return () => {
+      promiseVideo?.removeEventListener("loadedmetadata", handleVideoMetadata);
+      promiseVideo?.removeEventListener("loadeddata", handleVideoReady);
+      promiseVideo?.removeEventListener("seeked", handleVideoSeeked);
+      promiseVideo?.removeEventListener("error", handleVideoError);
+      promiseVideo?.pause();
+      promiseStage?.classList.remove("is-video-ready", "is-video-error");
+      videoPreloadObserver?.disconnect();
+      window.cancelAnimationFrame(videoSeekFrame);
       context.revert();
       lenis?.destroy();
+      if (lenisRef.current === lenis) lenisRef.current = null;
+      sliderStoppedLenisRef.current = false;
+      if (sliderSnapFrameRef.current !== null) {
+        window.cancelAnimationFrame(sliderSnapFrameRef.current);
+        sliderSnapFrameRef.current = null;
+      }
       window.cancelAnimationFrame(frame);
     };
+  }, []);
+
+  const handleSwipeCapture = useCallback((captured: boolean, scrollTarget?: number) => {
+    sliderCapturedRef.current = captured;
+    pageRef.current?.classList.toggle("is-story-captured", captured);
+    const lenis = lenisRef.current;
+
+    if (sliderSnapFrameRef.current !== null) {
+      window.cancelAnimationFrame(sliderSnapFrameRef.current);
+      sliderSnapFrameRef.current = null;
+    }
+
+    if (captured && lenis && !lenis.isStopped) {
+      lenis.stop();
+      sliderStoppedLenisRef.current = true;
+    }
+
+    if (typeof scrollTarget === "number") {
+      sliderSnapFrameRef.current = window.requestAnimationFrame(() => {
+        sliderSnapFrameRef.current = null;
+        if (captured !== sliderCapturedRef.current) return;
+
+        if (lenis) {
+          lenis.scrollTo(scrollTarget, { immediate: true, force: true });
+        } else {
+          window.scrollTo({ top: scrollTarget, behavior: "auto" });
+        }
+      });
+    }
+
+    if (!captured && lenis && sliderStoppedLenisRef.current) {
+      sliderStoppedLenisRef.current = false;
+      lenis.start();
+    }
   }, []);
 
   const makeWish = () => {
@@ -162,7 +291,7 @@ export function BirthdayExperience() {
 
       <header className="site-header">
         <a className="brand" href="#top" aria-label="Back to the beginning"><span className="brand-mark">✦</span><span>Just for you</span></a>
-        <nav aria-label="Birthday story navigation"><a href="#memories">Little things</a><a href="#game">Play</a><a href="#letter">A letter</a></nav>
+        <nav aria-label="Birthday story navigation"><a href="#memories">Little things</a><a href="#game">Play</a><a href="#notes">Tiny mails</a><a href="#letter">A letter</a></nav>
         <button className="theme-toggle" type="button" onClick={() => setTheme(theme === "light" ? "dark" : "light")}
           aria-label={`Switch to ${theme === "light" ? "night" : "day"} mode`}>
           <span>{theme === "light" ? "☾" : "☼"}</span><span className="theme-label">{theme === "light" ? "Moonlight" : "Sunlight"}</span>
@@ -175,17 +304,16 @@ export function BirthdayExperience() {
           <h1 className="hero-title" aria-label="Happy Birthday Beautiful"><span>Happy</span><span>Birthday,</span><span className="script-line">beautiful.</span></h1>
           <div className="hero-note">
             <p>Today is yours. So I made you a little world to wander through.</p>
-            <button className="round-button" type="button" onClick={() => document.querySelector("#story")?.scrollIntoView({ behavior: "smooth" })}>
+            <button className="round-button" type="button" onClick={() => document.querySelector("#memories")?.scrollIntoView({ behavior: "smooth" })}>
               <span>Begin</span><span aria-hidden="true">↓</span>
             </button>
           </div>
         </div>
-        <figure className="hero-portrait">
-          <img src="/blossom-hero.jpg" alt="Soft pink cherry blossoms glowing in spring light" />
-          <figcaption>For the girl who makes life bloom.</figcaption>
-        </figure>
+        <CakeHero theme={theme} />
         <p className="hero-index" aria-hidden="true">BLOOM / 01</p>
       </section>
+
+      <SwipeStory onCaptureChange={handleSwipeCapture} />
 
       <section className="intro-section" id="story">
         <p className="eyebrow" data-reveal>Before the cake. Before the candles.</p>
@@ -194,47 +322,44 @@ export function BirthdayExperience() {
       </section>
 
       <section className="promise-stage" aria-label="Five birthday truths">
-        <div className="tree-art" aria-hidden="true">
-          <div className="tree-glow" /><div className="tree-trunk" />
-          <div className="branch branch-one" /><div className="branch branch-two" /><div className="branch branch-three" />
-          <div className="tree-crown">
-            {Array.from({ length: 28 }, (_, index) => (
-              <span key={index} style={{ "--x": `${9 + ((index * 31) % 82)}%`, "--y": `${7 + ((index * 47) % 75)}%`, "--s": `${8 + (index % 4) * 4}px` } as CSSProperties} />
-            ))}
-          </div>
+        <div className="promise-video-wrap" aria-hidden="true">
+          <video
+            ref={promiseVideoRef}
+            className="promise-video"
+            src="/birthday-tree-scroll-scrub.mp4"
+            muted
+            playsInline
+            preload="metadata"
+            disablePictureInPicture
+            disableRemotePlayback
+            tabIndex={-1}
+          />
+          <div className="promise-video-shade" />
         </div>
         <div className="promise-copy">
-          <p className="eyebrow">Five little truths / 02</p>
-          <div className="truth-stack" aria-live="polite">{truths.map((truth) => <p className="truth-line" key={truth}>{truth}</p>)}</div>
-          <p className="scroll-whisper">scroll to let the tree bloom</p>
-        </div>
-      </section>
-
-      <section className="memories-section" id="memories">
-        <div className="section-heading" data-reveal><p className="eyebrow">A tiny museum / 03</p><h2>Things that<br /><em>feel like you.</em></h2></div>
-        <div className="memory-grid">
-          {gallery.map((item) => (
-            <article className="memory-card" key={item.number}>
-              <div className="memory-image-wrap"><img src={item.image} alt="" /><span>{item.number}</span></div>
-              <div className="memory-copy"><h3>{item.title}</h3><p>{item.copy}</p><small>{item.credit}</small></div>
-            </article>
-          ))}
+          <p className="eyebrow">Five little truths / 03</p>
+          <div className="truth-stack" aria-hidden="true">{truths.map((truth) => <p className="truth-line" key={truth}>{truth}</p>)}</div>
+          <ol className="sr-only">{truths.map((truth) => <li key={truth}>{truth}</li>)}</ol>
+          <p className="scroll-whisper">scroll to let the moment unfold</p>
         </div>
       </section>
 
       <BlossomRush />
 
+      <CatMailJourney theme={theme} />
+
       <section className="letter-section" id="letter">
-        <div className="letter-intro" data-reveal><p className="eyebrow">Something I meant to say / 05</p><h2>Some wishes deserve more than a caption.</h2><p>So this one is folded, sealed, and waiting for you.</p></div>
+        <div className="letter-intro" data-reveal><p className="eyebrow">Something I meant to say / 06</p><h2>Some wishes deserve more than a caption.</h2><p>So this one is folded, sealed, and waiting for you.</p></div>
         <button className="letter-card" type="button" onClick={() => setLetterOpen(true)} aria-haspopup="dialog">
           <span className="letter-stamp">✿</span><span className="letter-to">To: my favorite human</span><span className="letter-open">tap to open ↗</span><span className="letter-flap" aria-hidden="true" />
         </button>
       </section>
 
       <section className={`wish-section ${wishMade ? "wish-made" : ""}`}>
-        <img className="cake-photo" src="/birthday-cake.jpg" alt="A delicate pink floral birthday cake" /><div className="wish-shade" />
+        <Image className="cake-photo" src="/birthday-cake.jpg" alt="A delicate pink floral birthday cake" fill sizes="100vw" />
+        <div className="wish-shade" />
         <div className="wish-copy" data-reveal>
-          <p className="eyebrow">One last thing / 06</p><h2>{wishMade ? "The wish is on its way." : "Close your eyes. Make it a good one."}</h2>
+          <p className="eyebrow">One last thing / 07</p><h2>{wishMade ? "The wish is on its way." : "Close your eyes. Make it a good one."}</h2>
           <div className="candle-row" aria-hidden="true">{Array.from({ length: 5 }, (_, index) => <span className="candle" key={index}><i /></span>)}</div>
           <button className="wish-button" type="button" onClick={makeWish} disabled={wishMade}>{wishMade ? "Wish made ✦" : "Blow out the candles"}</button>
         </div>

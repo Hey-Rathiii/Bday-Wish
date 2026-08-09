@@ -21,6 +21,9 @@
 # misc
 .DS_Store
 *.pem
+*.tsbuildinfo
+/.skill-staging/
+/.vs/
 
 # debug
 npm-debug.log*
